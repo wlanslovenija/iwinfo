@@ -2575,6 +2575,17 @@ static int nl80211_get_frequency_offset(const char *ifname, int *buf)
 	return 0;
 }
 
+static int nl80211_lookup_phyname(const char *section, char *buf)
+{
+	int idx;
+
+	if ((idx = nl80211_phy_idx_from_uci(section)) < 0)
+		return -1;
+
+	sprintf(buf, "phy%d", idx);
+	return 0;
+}
+
 const struct iwinfo_ops nl80211_ops = {
 	.name             = "nl80211",
 	.probe            = nl80211_probe,
@@ -2603,5 +2614,6 @@ const struct iwinfo_ops nl80211_ops = {
 	.scanlist         = nl80211_get_scanlist,
 	.freqlist         = nl80211_get_freqlist,
 	.countrylist      = nl80211_get_countrylist,
+	.lookup_phy       = nl80211_lookup_phyname,
 	.close            = nl80211_close
 };
