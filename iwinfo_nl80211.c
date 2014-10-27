@@ -24,6 +24,7 @@
 
 #include <limits.h>
 #include <glob.h>
+#include <fnmatch.h>
 #include "iwinfo_nl80211.h"
 
 #define min(x, y) ((x) < (y)) ? (x) : (y)
@@ -125,6 +126,27 @@ static int nl80211_readint(const char *path)
 	return rv;
 }
 
+static int nl80211_readstr(const char *path, char *buffer, int length)
+{
+	int fd;
+	int rv = -1;
+
+	if ((fd = open(path, O_RDONLY)) > -1)
+	{
+		if ((rv = read(fd, buffer, length - 1)) > 0)
+		{
+			if (buffer[rv - 1] == '\n')
+				rv--;
+
+			buffer[rv] = 0;
+		}
+
+		close(fd);
+	}
+
+	return rv;
+}
+
 
 static int nl80211_msg_error(struct sockaddr_nl *nla,
 	struct nlmsgerr *err, void *arg)
@@ -210,45 +232,92 @@ static struct nl80211_msg_conveyor * nl80211_ctl(int cmd, int flags)
 	return nl80211_new(nls->nlctrl, cmd, flags);
 }
 
+static int nl80211_phy_idx_from_uci_path(struct uci_section *s)
+{
+	const char *opt;
+	char buf[128];
+	int idx = -1;
+	glob_t gl;
+
+	opt = uci_lookup_option_string(uci_ctx, s, "path");
+	if (!opt)
+		return -1;
+
+	snprintf(buf, sizeof(buf), "/sys/devices/%s/ieee80211/*/index", opt);  /**/
+	if (glob(buf, 0, NULL, &gl))
+		return -1;
+
+	if (gl.gl_pathc > 0)
+		idx = nl80211_readint(gl.gl_pathv[0]);
+
+	globfree(&gl);
+
+	return idx;
+}
+
+static int nl80211_phy_idx_from_uci_macaddr(struct uci_section *s)
+{
+	const char *opt;
+	char buf[128];
+	int i, idx = -1;
+	glob_t gl;
+
+	opt = uci_lookup_option_string(uci_ctx, s, "macaddr");
+	if (!opt)
+		return -1;
+
+	snprintf(buf, sizeof(buf), "/sys/class/ieee80211/*", opt);	/**/
+	if (glob(buf, 0, NULL, &gl))
+		return -1;
+
+	for (i = 0; i < gl.gl_pathc; i++)
+	{
+		snprintf(buf, sizeof(buf), "%s/macaddress", gl.gl_pathv[i]);
+		if (nl80211_readstr(buf, buf, sizeof(buf)) <= 0)
+			continue;
+
+		if (fnmatch(opt, buf, FNM_CASEFOLD))
+			continue;
+
+		snprintf(buf, sizeof(buf), "%s/index", gl.gl_pathv[i]);
+		if ((idx = nl80211_readint(buf)) > -1)
+			break;
+	}
+
+	globfree(&gl);
+
+	return idx;
+}
+
+static int nl80211_phy_idx_from_uci_phy(struct uci_section *s)
+{
+	const char *opt;
+	char buf[128];
+
+	opt = uci_lookup_option_string(uci_ctx, s, "phy");
+	if (!opt)
+		return -1;
+
+	snprintf(buf, sizeof(buf), "/sys/class/ieee80211/%s/index", opt);
+	return nl80211_readint(buf);
+}
+
 static int nl80211_phy_idx_from_uci(const char *name)
 {
 	struct uci_section *s;
-	const char *opt;
-	char buf[128];
-	glob_t gl;
-	FILE *f = NULL;
 	int idx = -1;
-	int err;
 
 	s = iwinfo_uci_get_radio(name, "mac80211");
 	if (!s)
 		goto free;
 
-	opt = uci_lookup_option_string(uci_ctx, s, "path");
-	if (!opt)
-		goto free;
+	idx = nl80211_phy_idx_from_uci_path(s);
 
-	snprintf(buf, sizeof(buf), "/sys/devices/%s/ieee80211/*/index", opt);
-	err = glob(buf, 0, NULL, &gl);
-	if (err)
-		goto free;
+	if (idx < 0)
+		idx = nl80211_phy_idx_from_uci_macaddr(s);
 
-	if (gl.gl_pathc)
-		f = fopen(gl.gl_pathv[0], "r");
-
-	globfree(&gl);
-
-	if (!f)
-		goto free;
-
-	err = fread(buf, 1, sizeof(buf) - 1, f);
-	fclose(f);
-
-	if (err <= 0)
-		goto free;
-
-	buf[err] = 0;
-	idx = atoi(buf);
+	if (idx < 0)
+		idx = nl80211_phy_idx_from_uci_phy(s);
 
 free:
 	iwinfo_uci_free();
