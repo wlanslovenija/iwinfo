@@ -372,6 +372,7 @@ struct uci_section *iwinfo_uci_get_radio(const char *name, const char *type)
 	struct uci_ptr ptr = {
 		.package = "wireless",
 		.section = name,
+		.flags = UCI_LOOKUP_EXTENDED,
 	};
 	const char *opt;
 
@@ -381,11 +382,7 @@ struct uci_section *iwinfo_uci_get_radio(const char *name, const char *type)
 			return NULL;
 	}
 
-	memset(&ptr, 0, sizeof(ptr));
-	ptr.package = "wireless";
-	ptr.section = name;
-
-	if (uci_lookup_ptr(uci_ctx, &ptr, NULL, false))
+	if (uci_lookup_ptr(uci_ctx, &ptr, NULL, true))
 		return NULL;
 
 	if (!ptr.s || strcmp(ptr.s->type, "wifi-device") != 0)
