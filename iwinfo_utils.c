@@ -372,7 +372,7 @@ struct uci_section *iwinfo_uci_get_radio(const char *name, const char *type)
 	struct uci_ptr ptr = {
 		.package = "wireless",
 		.section = name,
-		.flags = UCI_LOOKUP_EXTENDED,
+		.flags = (name && *name == '@') ? UCI_LOOKUP_EXTENDED : 0,
 	};
 	const char *opt;
 
