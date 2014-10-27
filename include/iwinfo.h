@@ -182,6 +182,7 @@ struct iwinfo_ops {
 
 const char * iwinfo_type(const char *ifname);
 const struct iwinfo_ops * iwinfo_backend(const char *ifname);
+const struct iwinfo_ops * iwinfo_backend_by_name(const char *name);
 void iwinfo_finish(void);
 
 extern const struct iwinfo_ops wext_ops;

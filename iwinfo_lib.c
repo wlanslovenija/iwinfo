@@ -350,6 +350,17 @@ const struct iwinfo_ops * iwinfo_backend(const char *ifname)
 	return NULL;
 }
 
+const struct iwinfo_ops * iwinfo_backend_by_name(const char *name)
+{
+	int i;
+
+	for (i = 0; i < ARRAY_SIZE(backends); i++)
+		if (!strcmp(backends[i]->name, name))
+			return backends[i];
+
+	return NULL;
+}
+
 void iwinfo_finish(void)
 {
 	int i;
