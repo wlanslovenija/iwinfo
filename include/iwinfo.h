@@ -177,6 +177,7 @@ struct iwinfo_ops {
 	int (*scanlist)(const char *, char *, int *);
 	int (*freqlist)(const char *, char *, int *);
 	int (*countrylist)(const char *, char *, int *);
+	int (*lookup_phy)(const char *, char *);
 	void (*close)(void);
 };
 
