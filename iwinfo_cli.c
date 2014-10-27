@@ -744,10 +744,29 @@ static void print_countrylist(const struct iwinfo_ops *iw, const char *ifname)
 	}
 }
 
+static void lookup_phy(const struct iwinfo_ops *iw, const char *section)
+{
+	char buf[IWINFO_BUFSIZE];
+
+	if (!iw->lookup_phy)
+	{
+		fprintf(stderr, "Not supported\n");
+		return;
+	}
+
+	if (iw->lookup_phy(section, buf))
+	{
+		fprintf(stderr, "Phy not found\n");
+		return;
+	}
+
+	printf("%s\n", buf);
+}
+
 
 int main(int argc, char **argv)
 {
-	int i;
+	int i, rv = 0;
 	char *p;
 	const struct iwinfo_ops *iw;
 	glob_t globbuf;
@@ -762,6 +781,7 @@ int main(int argc, char **argv)
 			"	iwinfo <device> freqlist\n"
 			"	iwinfo <device> assoclist\n"
 			"	iwinfo <device> countrylist\n"
+			"	iwinfo <backend> phyname <section>\n"
 		);
 
 		return 1;
@@ -791,49 +811,78 @@ int main(int argc, char **argv)
 		return 0;
 	}
 
-	iw = iwinfo_backend(argv[1]);
-
-	if (!iw)
+	if (argc > 3)
 	{
-		fprintf(stderr, "No such wireless device: %s\n", argv[1]);
-		return 1;
-	}
+		iw = iwinfo_backend_by_name(argv[1]);
 
-	for (i = 2; i < argc; i++)
-	{
-		switch(argv[i][0])
+		if (!iw)
 		{
-		case 'i':
-			print_info(iw, argv[1]);
-			break;
+			fprintf(stderr, "No such wireless backend: %s\n", argv[1]);
+			rv = 1;
+		}
+		else
+		{
+			switch (argv[2][0])
+			{
+			case 'p':
+				lookup_phy(iw, argv[3]);
+				break;
 
-		case 's':
-			print_scanlist(iw, argv[1]);
-			break;
+			default:
+				fprintf(stderr, "Unknown command: %s\n", argv[2]);
+				rv = 1;
+			}
+		}
+	}
+	else
+	{
+		iw = iwinfo_backend(argv[1]);
 
-		case 't':
-			print_txpwrlist(iw, argv[1]);
-			break;
+		if (!iw)
+		{
+			fprintf(stderr, "No such wireless device: %s\n", argv[1]);
+			rv = 1;
+		}
+		else
+		{
+			for (i = 2; i < argc; i++)
+			{
+				switch(argv[i][0])
+				{
+				case 'i':
+					print_info(iw, argv[1]);
+					break;
 
-		case 'f':
-			print_freqlist(iw, argv[1]);
-			break;
+				case 's':
+					print_scanlist(iw, argv[1]);
+					break;
 
-		case 'a':
-			print_assoclist(iw, argv[1]);
-			break;
+				case 't':
+					print_txpwrlist(iw, argv[1]);
+					break;
 
-		case 'c':
-			print_countrylist(iw, argv[1]);
-			break;
+				case 'f':
+					print_freqlist(iw, argv[1]);
+					break;
 
-		default:
-			fprintf(stderr, "Unknown command: %s\n", argv[i]);
-			return 1;
+				case 'a':
+					print_assoclist(iw, argv[1]);
+					break;
+
+				case 'c':
+					print_countrylist(iw, argv[1]);
+					break;
+
+				default:
+					fprintf(stderr, "Unknown command: %s\n", argv[i]);
+					rv = 1;
+				}
+			}
 		}
 	}
 
+out:
 	iwinfo_finish();
 
-	return 0;
+	return rv;
 }
