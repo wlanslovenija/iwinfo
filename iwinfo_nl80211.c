@@ -2446,15 +2446,15 @@ static int nl80211_get_ifcomb_cb(struct nl_msg *msg, void *arg)
 			[NL80211_IFACE_COMB_LIMITS] = { .type = NLA_NESTED },
 			[NL80211_IFACE_COMB_MAXNUM] = { .type = NLA_U32 },
 		};
-		struct nlattr *tb_comb[NUM_NL80211_IFACE_COMB];
+		struct nlattr *tb_comb[NUM_NL80211_IFACE_COMB+1];
 		static struct nla_policy iface_limit_policy[NUM_NL80211_IFACE_LIMIT] = {
 			[NL80211_IFACE_LIMIT_TYPES] = { .type = NLA_NESTED },
 			[NL80211_IFACE_LIMIT_MAX] = { .type = NLA_U32 },
 		};
-		struct nlattr *tb_limit[NUM_NL80211_IFACE_LIMIT];
+		struct nlattr *tb_limit[NUM_NL80211_IFACE_LIMIT+1];
 		struct nlattr *limit;
 
-		nla_parse_nested(tb_comb, NL80211_BAND_ATTR_MAX, comb, iface_combination_policy);
+		nla_parse_nested(tb_comb, NUM_NL80211_IFACE_COMB, comb, iface_combination_policy);
 
 		if (!tb_comb[NL80211_IFACE_COMB_LIMITS])
 			continue;
