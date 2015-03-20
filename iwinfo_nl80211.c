@@ -2383,13 +2383,6 @@ static int nl80211_get_hwmodelist_cb(struct nl_msg *msg, void *arg)
 			if (caps > 0)
 				*modes |= IWINFO_80211_N;
 
-			if (bands[NL80211_BAND_ATTR_VHT_CAPA])
-				vht_caps = nla_get_u32(bands[NL80211_BAND_ATTR_VHT_CAPA]);
-
-			/* Treat any nonzero capability as 11ac */
-			if (vht_caps > 0)
-				*modes |= IWINFO_80211_AC;
-
 			nla_for_each_nested(freq, bands[NL80211_BAND_ATTR_FREQS],
 			                    freqs_remain)
 			{
@@ -2403,6 +2396,14 @@ static int nl80211_get_hwmodelist_cb(struct nl_msg *msg, void *arg)
 				{
 					*modes |= IWINFO_80211_B;
 					*modes |= IWINFO_80211_G;
+				}
+				else if (bands[NL80211_BAND_ATTR_VHT_CAPA])
+				{
+					vht_caps = nla_get_u32(bands[NL80211_BAND_ATTR_VHT_CAPA]);
+
+					/* Treat any nonzero capability as 11ac */
+					if (vht_caps > 0)
+						*modes |= IWINFO_80211_AC;
 				}
 				else if (!(*modes & IWINFO_80211_AC))
 				{
