@@ -2274,9 +2274,8 @@ static int nl80211_get_freqlist_cb(struct nl_msg *msg, void *arg)
 			e->channel = nl80211_freq2channel(e->mhz);
 
 			e->restricted = (
-				freqs[NL80211_FREQUENCY_ATTR_PASSIVE_SCAN] ||
-				freqs[NL80211_FREQUENCY_ATTR_NO_IBSS]      ||
-				freqs[NL80211_FREQUENCY_ATTR_RADAR]
+				freqs[NL80211_FREQUENCY_ATTR_NO_IR] &&
+				!freqs[NL80211_FREQUENCY_ATTR_RADAR]
 			) ? 1 : 0;
 
 			e++;
