@@ -313,10 +313,6 @@ const struct iwinfo_iso3166_label IWINFO_ISO3166_NAMES[] = {
 	{ 0,               "" }
 };
 
-#ifndef ARRAY_SIZE
-#define ARRAY_SIZE(arr) (sizeof(arr) / sizeof((arr)[0]))
-#endif
-
 static const struct iwinfo_ops *backends[] = {
 #ifdef USE_NL80211
 	&nl80211_ops,

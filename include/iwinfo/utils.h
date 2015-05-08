@@ -25,6 +25,10 @@
 
 #include "iwinfo.h"
 
+#ifndef ARRAY_SIZE
+#define ARRAY_SIZE(arr) (sizeof(arr) / sizeof((arr)[0]))
+#endif
+
 #define LOG10_MAGIC	1.25892541179
 
 extern struct uci_context *uci_ctx;
