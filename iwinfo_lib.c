@@ -57,6 +57,16 @@ const char *IWINFO_OPMODE_NAMES[] = {
 	"P2P Go",
 };
 
+const char *IWINFO_HTMODE_NAMES[] = {
+	"HT20",
+	"HT40",
+	"VHT20",
+	"VHT40",
+	"VHT80",
+	"VHT80+80",
+	"VHT160",
+};
+
 
 /*
  * ISO3166 country labels

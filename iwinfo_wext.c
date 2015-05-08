@@ -440,6 +440,12 @@ static int wext_get_hwmodelist(const char *ifname, int *buf)
 	return -1;
 }
 
+static int wext_get_htmodelist(const char *ifname, int *buf)
+{
+	/* Stub */
+	return -1;
+}
+
 static int wext_get_encryption(const char *ifname, char *buf)
 {
 	/* No reliable crypto info in wext */
@@ -541,6 +547,7 @@ const struct iwinfo_ops wext_ops = {
 	.quality_max      = wext_get_quality_max,
 	.mbssid_support   = wext_get_mbssid_support,
 	.hwmodelist       = wext_get_hwmodelist,
+	.htmodelist       = wext_get_htmodelist,
 	.mode             = wext_get_mode,
 	.ssid             = wext_get_ssid,
 	.bssid            = wext_get_bssid,

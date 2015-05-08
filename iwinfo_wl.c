@@ -630,6 +630,29 @@ static int wl_get_hwmodelist(const char *ifname, int *buf)
 	return -1;
 }
 
+static int wl_get_htmodelist(const char *ifname, int *buf)
+{
+	int modes;
+
+	if (!wl_get_hwmodelist(ifname, &modes))
+	{
+		*buf = 0;
+
+		/* FIXME: determine real capabilities */
+
+		if (modes & IWINFO_80211_N)
+			*buf |= IWINFO_HTMODE_HT20 | IWINFO_HTMODE_HT40;
+
+		if (modes & IWINFO_80211_AC)
+			*buf |= IWINFO_HTMODE_VHT20 | IWINFO_HTMODE_VHT40 |
+			        IWINFO_HTMODE_VHT80;
+
+		return 0;
+	}
+
+	return -1;
+}
+
 static int wl_get_mbssid_support(const char *ifname, int *buf)
 {
 	wlc_rev_info_t revinfo;
@@ -715,6 +738,7 @@ const struct iwinfo_ops wl_ops = {
 	.quality_max      = wl_get_quality_max,
 	.mbssid_support   = wl_get_mbssid_support,
 	.hwmodelist       = wl_get_hwmodelist,
+	.htmodelist       = wl_get_htmodelist,
 	.mode             = wl_get_mode,
 	.ssid             = wl_get_ssid,
 	.bssid            = wl_get_bssid,

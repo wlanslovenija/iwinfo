@@ -1024,6 +1024,12 @@ static int madwifi_get_hwmodelist(const char *ifname, int *buf)
 	return -1;
 }
 
+static int madwifi_get_htmodelist(const char *ifname, int *buf)
+{
+	/* OpenWrt's madwifi did never support any HT rates */
+	return -1;
+}
+
 static int madwifi_get_mbssid_support(const char *ifname, int *buf)
 {
 	/* Test whether we can create another interface */
@@ -1116,6 +1122,7 @@ const struct iwinfo_ops madwifi_ops = {
 	.quality_max      = madwifi_get_quality_max,
 	.mbssid_support   = madwifi_get_mbssid_support,
 	.hwmodelist       = madwifi_get_hwmodelist,
+	.htmodelist       = madwifi_get_htmodelist,
 	.mode             = madwifi_get_mode,
 	.ssid             = madwifi_get_ssid,
 	.bssid            = madwifi_get_bssid,
