@@ -2411,9 +2411,17 @@ static int nl80211_get_countrylist(const char *ifname, char *buf, int *len)
 	return 0;
 }
 
-static int nl80211_get_hwmodelist_cb(struct nl_msg *msg, void *arg)
+
+struct nl80211_modes
 {
-	int *modes = arg;
+	bool ok;
+	uint32_t hw;
+	uint32_t ht;
+};
+
+static int nl80211_get_modelist_cb(struct nl_msg *msg, void *arg)
+{
+	struct nl80211_modes *m = arg;
 	int bands_remain, freqs_remain;
 	uint16_t caps = 0;
 	uint32_t vht_caps = 0;
@@ -2421,8 +2429,6 @@ static int nl80211_get_hwmodelist_cb(struct nl_msg *msg, void *arg)
 	struct nlattr *bands[NL80211_BAND_ATTR_MAX + 1];
 	struct nlattr *freqs[NL80211_FREQUENCY_ATTR_MAX + 1];
 	struct nlattr *band, *freq;
-
-	*modes = 0;
 
 	if (attr[NL80211_ATTR_WIPHY_BANDS])
 	{
@@ -2436,7 +2442,13 @@ static int nl80211_get_hwmodelist_cb(struct nl_msg *msg, void *arg)
 
 			/* Treat any nonzero capability as 11n */
 			if (caps > 0)
-				*modes |= IWINFO_80211_N;
+			{
+				m->hw |= IWINFO_80211_N;
+				m->ht |= IWINFO_HTMODE_HT20;
+
+				if (caps & (1 << 1))
+					m->ht |= IWINFO_HTMODE_HT40;
+			}
 
 			nla_for_each_nested(freq, bands[NL80211_BAND_ATTR_FREQS],
 			                    freqs_remain)
@@ -2449,8 +2461,8 @@ static int nl80211_get_hwmodelist_cb(struct nl_msg *msg, void *arg)
 
 				if (nla_get_u32(freqs[NL80211_FREQUENCY_ATTR_FREQ]) < 2485)
 				{
-					*modes |= IWINFO_80211_B;
-					*modes |= IWINFO_80211_G;
+					m->hw |= IWINFO_80211_B;
+					m->hw |= IWINFO_80211_G;
 				}
 				else if (bands[NL80211_BAND_ATTR_VHT_CAPA])
 				{
@@ -2458,14 +2470,29 @@ static int nl80211_get_hwmodelist_cb(struct nl_msg *msg, void *arg)
 
 					/* Treat any nonzero capability as 11ac */
 					if (vht_caps > 0)
-						*modes |= IWINFO_80211_AC;
+					{
+						m->hw |= IWINFO_80211_AC;
+						m->ht |= IWINFO_HTMODE_VHT20 | IWINFO_HTMODE_VHT40 | IWINFO_HTMODE_VHT80;
+
+						switch ((vht_caps >> 2) & 3)
+						{
+						case 2:
+							m->ht |= IWINFO_HTMODE_VHT80_80;
+							/* fall through */
+
+						case 1:
+							m->ht |= IWINFO_HTMODE_VHT160;
+						}
+					}
 				}
-				else if (!(*modes & IWINFO_80211_AC))
+				else if (!(m->hw & IWINFO_80211_AC))
 				{
-					*modes |= IWINFO_80211_A;
+					m->hw |= IWINFO_80211_A;
 				}
 			}
 		}
+
+		m->ok = 1;
 	}
 
 	return NL_SKIP;
@@ -2474,16 +2501,45 @@ static int nl80211_get_hwmodelist_cb(struct nl_msg *msg, void *arg)
 static int nl80211_get_hwmodelist(const char *ifname, int *buf)
 {
 	struct nl80211_msg_conveyor *req;
+	struct nl80211_modes m = { };
 
 	req = nl80211_msg(ifname, NL80211_CMD_GET_WIPHY, 0);
 	if (req)
 	{
-		nl80211_send(req, nl80211_get_hwmodelist_cb, buf);
+		nl80211_send(req, nl80211_get_modelist_cb, &m);
 		nl80211_free(req);
 	}
 
-	return *buf ? 0 : -1;
+	if (m.ok)
+	{
+		*buf = m.hw;
+		return 0;
+	}
+
+	return -1;
 }
+
+static int nl80211_get_htmodelist(const char *ifname, int *buf)
+{
+	struct nl80211_msg_conveyor *req;
+	struct nl80211_modes m = { };
+
+	req = nl80211_msg(ifname, NL80211_CMD_GET_WIPHY, 0);
+	if (req)
+	{
+		nl80211_send(req, nl80211_get_modelist_cb, &m);
+		nl80211_free(req);
+	}
+
+	if (m.ok)
+	{
+		*buf = m.ht;
+		return 0;
+	}
+
+	return -1;
+}
+
 
 static int nl80211_get_ifcomb_cb(struct nl_msg *msg, void *arg)
 {
@@ -2657,6 +2713,7 @@ const struct iwinfo_ops nl80211_ops = {
 	.quality_max      = nl80211_get_quality_max,
 	.mbssid_support   = nl80211_get_mbssid_support,
 	.hwmodelist       = nl80211_get_hwmodelist,
+	.htmodelist       = nl80211_get_htmodelist,
 	.mode             = nl80211_get_mode,
 	.ssid             = nl80211_get_ssid,
 	.bssid            = nl80211_get_bssid,

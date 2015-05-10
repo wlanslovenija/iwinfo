@@ -57,6 +57,16 @@ const char *IWINFO_OPMODE_NAMES[] = {
 	"P2P Go",
 };
 
+const char *IWINFO_HTMODE_NAMES[] = {
+	"HT20",
+	"HT40",
+	"VHT20",
+	"VHT40",
+	"VHT80",
+	"VHT80+80",
+	"VHT160",
+};
+
 
 /*
  * ISO3166 country labels
@@ -312,10 +322,6 @@ const struct iwinfo_iso3166_label IWINFO_ISO3166_NAMES[] = {
 	{ 0x5A57 /* ZW */, "Zimbabwe" },
 	{ 0,               "" }
 };
-
-#ifndef ARRAY_SIZE
-#define ARRAY_SIZE(arr) (sizeof(arr) / sizeof((arr)[0]))
-#endif
 
 static const struct iwinfo_ops *backends[] = {
 #ifdef USE_NL80211

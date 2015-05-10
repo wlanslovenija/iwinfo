@@ -744,6 +744,23 @@ static void print_countrylist(const struct iwinfo_ops *iw, const char *ifname)
 	}
 }
 
+static void print_htmodelist(const struct iwinfo_ops *iw, const char *ifname)
+{
+	int i, htmodes = 0;
+
+	if (iw->htmodelist(ifname, &htmodes))
+	{
+		printf("No HT mode information available\n");
+		return;
+	}
+
+	for (i = 0; i < ARRAY_SIZE(IWINFO_HTMODE_NAMES); i++)
+		if (htmodes & (1 << i))
+			printf("%s ", IWINFO_HTMODE_NAMES[i]);
+
+	printf("\n");
+}
+
 static void lookup_phy(const struct iwinfo_ops *iw, const char *section)
 {
 	char buf[IWINFO_BUFSIZE];
@@ -781,6 +798,7 @@ int main(int argc, char **argv)
 			"	iwinfo <device> freqlist\n"
 			"	iwinfo <device> assoclist\n"
 			"	iwinfo <device> countrylist\n"
+			"	iwinfo <device> htmodelist\n"
 			"	iwinfo <backend> phyname <section>\n"
 		);
 
@@ -871,6 +889,10 @@ int main(int argc, char **argv)
 
 				case 'c':
 					print_countrylist(iw, argv[1]);
+					break;
+
+				case 'h':
+					print_htmodelist(iw, argv[1]);
 					break;
 
 				default:

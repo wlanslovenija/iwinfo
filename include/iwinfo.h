@@ -66,6 +66,21 @@ enum iwinfo_opmode {
 extern const char *IWINFO_OPMODE_NAMES[];
 
 
+enum iwinfo_htmode {
+	IWINFO_HTMODE_HT20       = (1 << 0),
+	IWINFO_HTMODE_HT40       = (1 << 1),
+	IWINFO_HTMODE_VHT20      = (1 << 2),
+	IWINFO_HTMODE_VHT40      = (1 << 3),
+	IWINFO_HTMODE_VHT80      = (1 << 4),
+	IWINFO_HTMODE_VHT80_80   = (1 << 5),
+	IWINFO_HTMODE_VHT160     = (1 << 6),
+
+	IWINFO_HTMODE_COUNT      = 7
+};
+
+extern const char *IWINFO_HTMODE_NAMES[IWINFO_HTMODE_COUNT];
+
+
 struct iwinfo_rate_entry {
 	uint32_t rate;
 	int8_t mcs;
@@ -176,6 +191,7 @@ struct iwinfo_ops {
 	int (*quality_max)(const char *, int *);
 	int (*mbssid_support)(const char *, int *);
 	int (*hwmodelist)(const char *, int *);
+	int (*htmodelist)(const char *, int *);
 	int (*ssid)(const char *, char *);
 	int (*bssid)(const char *, char *);
 	int (*country)(const char *, char *);
