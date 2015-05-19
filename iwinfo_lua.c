@@ -597,7 +597,7 @@ static char * iwinfo_L_country_lookup(char *buf, int len, int iso3166)
 
 static int iwinfo_L_countrylist(lua_State *L, int (*func)(const char *, char *, int *))
 {
-	int len, i, j;
+	int len, i;
 	char rv[IWINFO_BUFSIZE], alpha2[3];
 	char *ccode;
 	const char *ifname = luaL_checkstring(L, 1);
@@ -608,7 +608,7 @@ static int iwinfo_L_countrylist(lua_State *L, int (*func)(const char *, char *, 
 
 	if (!(*func)(ifname, rv, &len))
 	{
-		for (l = IWINFO_ISO3166_NAMES, j = 1; l->iso3166; l++)
+		for (l = IWINFO_ISO3166_NAMES, i = 1; l->iso3166; l++)
 		{
 			if ((ccode = iwinfo_L_country_lookup(rv, len, l->iso3166)) != NULL)
 			{
@@ -626,7 +626,7 @@ static int iwinfo_L_countrylist(lua_State *L, int (*func)(const char *, char *, 
 				lua_pushstring(L, l->name);
 				lua_setfield(L, -2, "name");
 
-				lua_rawseti(L, -2, j++);
+				lua_rawseti(L, -2, i++);
 			}
 		}
 	}

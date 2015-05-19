@@ -32,8 +32,6 @@ static double wext_freq2float(const struct iw_freq *in)
 
 static inline int wext_freq2mhz(const struct iw_freq *in)
 {
-	int i;
-
 	if( in->e == 6 )
 	{
 		return in->m;

@@ -903,7 +903,6 @@ int main(int argc, char **argv)
 		}
 	}
 
-out:
 	iwinfo_finish();
 
 	return rv;

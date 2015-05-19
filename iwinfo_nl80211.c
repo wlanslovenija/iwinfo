@@ -216,7 +216,6 @@ static struct nl80211_msg_conveyor * nl80211_new(struct genl_family *family,
 	return &cv;
 
 err:
-nla_put_failure:
 	if (cb)
 		nl_cb_put(cb);
 
@@ -268,7 +267,7 @@ static int nl80211_phy_idx_from_uci_macaddr(struct uci_section *s)
 	if (!opt)
 		return -1;
 
-	snprintf(buf, sizeof(buf), "/sys/class/ieee80211/*", opt);	/**/
+	snprintf(buf, sizeof(buf), "/sys/class/ieee80211/*");	/**/
 	if (glob(buf, 0, NULL, &gl))
 		return -1;
 
@@ -566,7 +565,7 @@ static char * nl80211_ifname2phy(const char *ifname)
 
 static char * nl80211_phy2ifname(const char *ifname)
 {
-	int fd, ifidx = -1, cifidx = -1, phyidx = -1;
+	int ifidx = -1, cifidx = -1, phyidx = -1;
 	char buffer[64];
 	static char nif[IFNAMSIZ] = { 0 };
 
@@ -892,10 +891,9 @@ static int __nl80211_wpactl_query(const char *ifname, ...)
 
 static char * nl80211_ifadd(const char *ifname)
 {
-	int phyidx;
 	char *rv = NULL, path[PATH_MAX];
 	static char nif[IFNAMSIZ] = { 0 };
-	struct nl80211_msg_conveyor *req, *res;
+	struct nl80211_msg_conveyor *req;
 	FILE *sysfs;
 
 	req = nl80211_msg(ifname, NL80211_CMD_NEW_INTERFACE, 0);
@@ -984,7 +982,7 @@ static int nl80211_get_ssid_bssid_cb(struct nl_msg *msg, void *arg)
 	struct nlattr *bss[NL80211_BSS_MAX + 1];
 
 	static struct nla_policy bss_policy[NL80211_BSS_MAX + 1] = {
-		[NL80211_BSS_INFORMATION_ELEMENTS] = {                 },
+		[NL80211_BSS_INFORMATION_ELEMENTS] = { 0 },
 		[NL80211_BSS_STATUS]               = { .type = NLA_U32 },
 	};
 
@@ -1043,7 +1041,7 @@ static int nl80211_get_ssid(const char *ifname, char *buf)
 	res = nl80211_phy2ifname(ifname);
 	req = nl80211_msg(res ? res : ifname, NL80211_CMD_GET_SCAN, NLM_F_DUMP);
 
-	sb.ssid = buf;
+	sb.ssid = (unsigned char *)buf;
 	*buf = 0;
 
 	if (req)
@@ -1944,15 +1942,15 @@ static int nl80211_get_scanlist_cb(struct nl_msg *msg, void *arg)
 	static struct nla_policy bss_policy[NL80211_BSS_MAX + 1] = {
 		[NL80211_BSS_TSF]                  = { .type = NLA_U64 },
 		[NL80211_BSS_FREQUENCY]            = { .type = NLA_U32 },
-		[NL80211_BSS_BSSID]                = {                 },
+		[NL80211_BSS_BSSID]                = { 0 },
 		[NL80211_BSS_BEACON_INTERVAL]      = { .type = NLA_U16 },
 		[NL80211_BSS_CAPABILITY]           = { .type = NLA_U16 },
-		[NL80211_BSS_INFORMATION_ELEMENTS] = {                 },
+		[NL80211_BSS_INFORMATION_ELEMENTS] = { 0 },
 		[NL80211_BSS_SIGNAL_MBM]           = { .type = NLA_U32 },
 		[NL80211_BSS_SIGNAL_UNSPEC]        = { .type = NLA_U8  },
 		[NL80211_BSS_STATUS]               = { .type = NLA_U32 },
 		[NL80211_BSS_SEEN_MS_AGO]          = { .type = NLA_U32 },
-		[NL80211_BSS_BEACON_IES]           = {                 },
+		[NL80211_BSS_BEACON_IES]           = { 0 },
 	};
 
 	if (!tb[NL80211_ATTR_BSS] ||
@@ -2073,7 +2071,7 @@ static int wpasupp_ssid_decode(const char *in, char *out, int outlen)
 				break;
 
 			case 'e':
-				out[len++] = '\e'; in++;
+				out[len++] = '\033'; in++;
 				break;
 
 			case 'x':
@@ -2333,15 +2331,6 @@ static int nl80211_get_freqlist_cb(struct nl_msg *msg, void *arg)
 	struct nlattr *freqs[NL80211_FREQUENCY_ATTR_MAX + 1];
 	struct nlattr *band, *freq;
 
-	static struct nla_policy freq_policy[NL80211_FREQUENCY_ATTR_MAX + 1] = {
-		[NL80211_FREQUENCY_ATTR_FREQ]         = { .type = NLA_U32  },
-		[NL80211_FREQUENCY_ATTR_DISABLED]     = { .type = NLA_FLAG },
-		[NL80211_FREQUENCY_ATTR_PASSIVE_SCAN] = { .type = NLA_FLAG },
-		[NL80211_FREQUENCY_ATTR_NO_IBSS]      = { .type = NLA_FLAG },
-		[NL80211_FREQUENCY_ATTR_RADAR]        = { .type = NLA_FLAG },
-		[NL80211_FREQUENCY_ATTR_MAX_TX_POWER] = { .type = NLA_U32  },
-	};
-
 	nla_for_each_nested(band, attr[NL80211_ATTR_WIPHY_BANDS], bands_remain)
 	{
 		nla_parse(bands, NL80211_BAND_ATTR_MAX,
@@ -2426,7 +2415,7 @@ static int nl80211_get_country(const char *ifname, char *buf)
 
 static int nl80211_get_countrylist(const char *ifname, char *buf, int *len)
 {
-	int i, count;
+	int count;
 	struct iwinfo_country_entry *e = (struct iwinfo_country_entry *)buf;
 	const struct iwinfo_iso3166_label *l;
 
@@ -2531,7 +2520,7 @@ static int nl80211_get_modelist_cb(struct nl_msg *msg, void *arg)
 static int nl80211_get_hwmodelist(const char *ifname, int *buf)
 {
 	struct nl80211_msg_conveyor *req;
-	struct nl80211_modes m = { };
+	struct nl80211_modes m = { 0 };
 
 	req = nl80211_msg(ifname, NL80211_CMD_GET_WIPHY, 0);
 	if (req)
@@ -2552,7 +2541,7 @@ static int nl80211_get_hwmodelist(const char *ifname, int *buf)
 static int nl80211_get_htmodelist(const char *ifname, int *buf)
 {
 	struct nl80211_msg_conveyor *req;
-	struct nl80211_modes m = { };
+	struct nl80211_modes m = { 0 };
 
 	req = nl80211_msg(ifname, NL80211_CMD_GET_WIPHY, 0);
 	if (req)
