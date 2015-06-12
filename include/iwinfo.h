@@ -132,7 +132,7 @@ struct iwinfo_crypto_entry {
 
 struct iwinfo_scanlist_entry {
 	uint8_t mac[6];
-	uint8_t ssid[IWINFO_ESSID_MAX_SIZE+1];
+	char ssid[IWINFO_ESSID_MAX_SIZE+1];
 	enum iwinfo_opmode mode;
 	uint8_t channel;
 	uint8_t signal;
@@ -143,12 +143,12 @@ struct iwinfo_scanlist_entry {
 
 struct iwinfo_country_entry {
 	uint16_t iso3166;
-	uint8_t ccode[4];
+	char ccode[4];
 };
 
 struct iwinfo_iso3166_label {
 	uint16_t iso3166;
-	uint8_t  name[28];
+	char name[28];
 };
 
 struct iwinfo_hardware_id {
